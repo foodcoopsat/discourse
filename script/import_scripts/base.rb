@@ -398,6 +398,7 @@ class ImportScripts::Base
       position: opts[:position],
       description: opts[:description],
       parent_category_id: opts[:parent_category_id],
+      all_topics_wiki: opts[:all_topics_wiki] || false,
       color: opts[:color] || "AB9364",
       text_color: opts[:text_color] || "FFF",
       read_restricted: opts[:read_restricted] || false,
