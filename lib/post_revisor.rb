@@ -458,6 +458,8 @@ class PostRevisor
       user_id: @post.last_editor_id,
       post_id: @post.id,
       number: @post.version,
+      created_at: @revised_at,
+      updated_at: @revised_at,
       modifications: modifications
     )
   end
