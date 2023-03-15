@@ -1,4 +1,4 @@
-FROM ruby:3.1 AS base
+FROM ruby:3.2 AS base
 
 ENV RAILS_ENV=production \
     DISCOURSE_SERVE_STATIC_ASSETS=true \
