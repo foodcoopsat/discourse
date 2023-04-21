@@ -73,6 +73,10 @@ RUN cd plugins \
     && mv discourse-multi-sso-* discourse-multi-sso \
     && curl -L https://github.com/foodcoopsat/discourse-virtmail/archive/e29c6e90482ba9913bd3231897acf3cb2bb82d63.tar.gz | tar -xz \
     && mv discourse-virtmail-* discourse-virtmail
+    && curl -L https://github.com/discourse/discourse-checklist/archive/4a7f3df360a8e4ff3bbebfed33ea545b1c72506e.tar.gz | tar -xz \
+    && mv discourse-checklist-* discourse-checklist
+    && curl -L https://github.com/discourse/discourse-solved/archive/bffc46858a212091252aff185ac583eea7244947.tar.gz | tar -xz \
+    && mv discourse-solved-* discourse-solved
 
 RUN cd app/assets/javascripts/discourse && \
     /home/discourse/discourse/app/assets/javascripts/node_modules/.bin/ember build -prod
