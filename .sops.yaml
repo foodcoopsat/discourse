@@ -1,0 +1,3 @@
+creation_rules:
+  - path_regex: (configs/.*|data/.*|secrets/.*|docker-compose.yml)
+    age: age134ua239eacs8dk5lrys5g7wtfa90tv9y9cnzw984wmkwfjaslu7qd9luys 

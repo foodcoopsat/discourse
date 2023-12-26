@@ -1,11 +1,16 @@
-FROM ruby:3.1 AS base
+FROM ruby:3.2 AS base
 
 ENV RAILS_ENV=production \
     DISCOURSE_SERVE_STATIC_ASSETS=true \
     RUBY_ALLOCATOR=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2 \
-    RUBY_GLOBAL_METHOD_CACHE_SIZE=131072
+    RUBY_GLOBAL_METHOD_CACHE_SIZE=131072 \
+    NODE_MAJOR=18
 
-RUN curl --silent --location  https://deb.nodesource.com/setup_18.x | bash - \
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" > /etc/apt/sources.list.d/nodesource.list
+
+RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     brotli \
     ghostscript \
@@ -21,9 +26,18 @@ RUN curl --silent --location  https://deb.nodesource.com/setup_18.x | bash - \
     optipng \
     pngcrush \
     pngquant \
-    postgresql-client-13; \
-    npm install -g terser uglify-js yarn; \
-    rm -rf /var/lib/apt/lists/*
+    lsb-release \
+    postgresql-client \
+    silversearcher-ag \
+    vim-tiny \
+    && rm -rf /var/lib/apt/lists/*
+
+# add node and npm to path so the commands are available
+# ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
+# ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+
+RUN npm install -g terser uglify-js pnpm patch-package ember-cli express yarn
+
 
 ENV OXIPNG_VERSION 8.0.0
 ENV OXIPNG_SHA256 38e9123856bab64bb798c6630f86fa410137ed06e7fa6ee661c7b3c7a36e60fe
@@ -37,47 +51,55 @@ RUN curl -o oxipng.tar.gz -fSL "https://github.com/shssoichiro/oxipng/releases/d
 RUN addgroup --gid 1000 discourse \
     && adduser --system --uid 1000 --ingroup discourse --shell /bin/bash discourse
 
-USER discourse
 WORKDIR /home/discourse/discourse
 
-ENV DISCOURSE_VERSION 3.0.2
+ENV DISCOURSE_VERSION 3.2.0.beta3
 
-RUN git clone --branch v${DISCOURSE_VERSION} --depth 1 https://github.com/discourse/discourse.git . \
-    && rm config/initializers/100-verify_config.rb \
-    && gem install bundler \
-    && bundle config build.nokogiri --use-system-libraries \
-    && bundle config set deployment true \
+
+RUN git clone --branch v${DISCOURSE_VERSION} --depth 1 https://github.com/discourse/discourse.git . 
+
+RUN bundle config build.nokogiri --use-system-libraries \
+    && gem install bundler --conservative -v $(awk '/BUNDLED WITH/ { getline; gsub(/ /,""); print $0 }' Gemfile.lock) \
     && bundle config set without development test \
-    && bundle install --jobs 8 \
-    && yarn install --production \
+    && bundle config set path ./vendor/bundle\
+    && bundle config set deployment true \
+    && bundle install --jobs 8 
+
+
+# yarn patch-package doesnt work
+# RUN echo 'patch-package' > app/assets/javascripts/run-patch-package \
+    # && yarn install --frozen-lockfile \
+RUN yarn install --frozen-lockfile \
     && yarn cache clean
+# RUN bundle exec rake yarn:install
 
 RUN cd plugins \
-    && curl -L https://github.com/discourse/discourse-assign/archive/1268048874bcd5c20c0eaf039284bafa9e4e80de.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-assign/archive/a5b7911cb98532924ffb0b635a3c43285c7fd131.tar.gz | tar -xz \
     && mv discourse-assign-* discourse-assign \
-    && curl -L https://github.com/discourse/discourse-calendar/archive/5c243e6e1524d92e485a39e16df43759a62f02a9.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-calendar/archive/a0af35fca8e38b8f7038204a2f5ac17bf61851b2.tar.gz | tar -xz \
     && mv discourse-calendar-* discourse-calendar \
-    && curl -L https://github.com/discourse/discourse-data-explorer/archive/f51bc050a207c6cc97e3faeb6b527fe989fb285a.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-data-explorer/archive/9bd70192b6bf2c66252c711b49dd4a6762110432.tar.gz | tar -xz \
     && mv discourse-data-explorer-* discourse-data-explorer \
-    && curl -L https://github.com/discourse/discourse-docs/archive/bf1c4574a61b053c136e2b181ba2fedb6c16f838.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-docs/archive/8b02f32ad6baf2add12289365307cbdfef0c54bf.tar.gz | tar -xz \
     && mv discourse-docs-* discourse-docs \
-    && curl -L https://github.com/discourse/discourse-graphviz/archive/44cbf0a560baaa0457dc83601c6aa7054eebd7eb.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-graphviz/archive/264ed49013e4be6896526593177743de79e8e4a2.tar.gz | tar -xz \
     && mv discourse-graphviz-* discourse-graphviz \
-    && curl -L https://github.com/discourse/discourse-jitsi/archive/730dec01c66225ec9f4ba2a11242e1922dc8b000.tar.gz | tar -xz \
-    && mv discourse-jitsi-* discourse-jitsi \
-    && curl -L https://github.com/discourse/discourse-prometheus/archive/78324fbaa8cfa3040ee7e01ac793ad2515b6c004.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-prometheus/archive/639b8936ca20758802284a35e2b5e764e0a032f9.tar.gz | tar -xz \
     && mv discourse-prometheus-* discourse-prometheus \
+    && curl -L https://github.com/discourse/discourse-reactions/archive/37aa7a9bda3aaf6861524e3e8acdc8124997494e.tar.gz  | tar -xz \
+    && mv discourse-reactions-* discourse-reactions \
     && curl -L https://github.com/foodcoopsat/discourse-group-global-notice/archive/598c3f22d000d9eb11df073f8e8d749797624653.tar.gz | tar -xz \
     && mv discourse-group-global-notice-* discourse-group-global-notice \
     && curl -L https://github.com/foodcoopsat/discourse-multi-sso/archive/e0562a042c04455f0f978d984b8c8c2d763e981b.tar.gz | tar -xz \
     && mv discourse-multi-sso-* discourse-multi-sso \
     && curl -L https://github.com/foodcoopsat/discourse-virtmail/archive/e29c6e90482ba9913bd3231897acf3cb2bb82d63.tar.gz | tar -xz \
-    && mv discourse-virtmail-* discourse-virtmail
+    && mv discourse-virtmail-* discourse-virtmail \
+    && curl -L https://github.com/discourse/discourse-jitsi/archive/730dec01c66225ec9f4ba2a11242e1922dc8b000.tar.gz | tar -xz \
+    && mv discourse-jitsi-* discourse-jitsi
 
-RUN cd app/assets/javascripts/discourse && \
-    /home/discourse/discourse/app/assets/javascripts/node_modules/.bin/ember build -prod
+RUN cd app/assets/javascripts/discourse && ember build -prod 
 
-USER root
+# USER root
 
 FROM base AS builder
 
@@ -96,8 +118,13 @@ RUN /etc/init.d/redis-server start \
     \\\\c discourse  \n\
     CREATE EXTENSION hstore;  \n\
     CREATE EXTENSION pg_trgm;" | su postgres -c psql \
-    && su discourse -c 'bundle exec rake multisite:migrate' \
-    && su discourse -c 'bundle exec rake assets:precompile'
+    && chown -R discourse /home/discourse/discourse \
+    && mkdir /nonexistent/.config/configstore -p \
+    && chown -R discourse /nonexistent/.config/configstore \
+    && mkdir /nonexistent/.cache/yarn -p \
+    && chown -R discourse /nonexistent/.cache/yarn \
+    && su discourse -c 'bundle exec rake assets:precompile' \
+    && su discourse -c 'bundle exec rake multisite:migrate'
 
 FROM base
 
@@ -109,11 +136,14 @@ RUN ln -sf /dev/stdout log/production.log \
 COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/app/assets/javascripts/discourse/dist ./app/assets/javascripts/discourse/dist
 COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/plugins ./plugins
 COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/public ./public
+COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/tmp ./tmp
 
 # Fix omniauth-discourse compatibility
 RUN sed -i 's/URI.escape/CGI.escape/g' plugins/discourse-multi-sso/gems/*/gems/omniauth-discourse-1.0.0/lib/omniauth/strategies/discourse/sso.rb
 
-ADD nginx.conf /etc/nginx/
+COPY nginx.conf /etc/nginx/
+RUN rm /home/discourse/discourse/config/initializers/100-verify_config.rb
+RUN chown -R discourse /home/discourse/discourse
 
 USER discourse
 
