@@ -84,8 +84,6 @@ RUN cd plugins \
     && mv discourse-docs-* discourse-docs \
     && curl -L https://github.com/discourse/discourse-graphviz/archive/264ed49013e4be6896526593177743de79e8e4a2.tar.gz | tar -xz \
     && mv discourse-graphviz-* discourse-graphviz \
-    && curl -L https://github.com/discourse/discourse-prometheus/archive/639b8936ca20758802284a35e2b5e764e0a032f9.tar.gz | tar -xz \
-    && mv discourse-prometheus-* discourse-prometheus \
     && curl -L https://github.com/discourse/discourse-reactions/archive/37aa7a9bda3aaf6861524e3e8acdc8124997494e.tar.gz  | tar -xz \
     && mv discourse-reactions-* discourse-reactions \
     && curl -L https://github.com/foodcoopsat/discourse-group-global-notice/archive/598c3f22d000d9eb11df073f8e8d749797624653.tar.gz | tar -xz \
@@ -96,6 +94,8 @@ RUN cd plugins \
     && mv discourse-virtmail-* discourse-virtmail \
     && curl -L https://github.com/discourse/discourse-jitsi/archive/730dec01c66225ec9f4ba2a11242e1922dc8b000.tar.gz | tar -xz \
     && mv discourse-jitsi-* discourse-jitsi
+    # && curl -L https://github.com/discourse/discourse-prometheus/archive/639b8936ca20758802284a35e2b5e764e0a032f9.tar.gz | tar -xz \
+    # && mv discourse-prometheus-* discourse-prometheus \
 
 RUN cd app/assets/javascripts/discourse && ember build -prod 
 
