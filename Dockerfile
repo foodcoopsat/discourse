@@ -55,7 +55,7 @@ RUN addgroup --gid 1000 discourse \
 
 WORKDIR /home/discourse/discourse
 
-ENV DISCOURSE_VERSION 3.2.0.beta4
+ENV DISCOURSE_VERSION 3.2.0.beta3
 
 
 RUN git clone --branch v${DISCOURSE_VERSION} --depth 1 https://github.com/discourse/discourse.git . 
