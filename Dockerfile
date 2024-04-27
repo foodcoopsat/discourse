@@ -24,7 +24,6 @@ RUN --mount=type=cache,target=/var/cache/apt \
     libxml2 \
     nginx \
     nodejs \
-    npm \
     optipng \
     pngcrush \
     pngquant \
