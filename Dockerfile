@@ -55,7 +55,7 @@ RUN addgroup --gid 1000 discourse \
 
 WORKDIR /home/discourse/discourse
 
-ENV DISCOURSE_VERSION 3.2.0.beta3
+ENV DISCOURSE_VERSION 3.3.0.beta1
 
 
 RUN git clone --branch v${DISCOURSE_VERSION} --depth 1 https://github.com/discourse/discourse.git . 
@@ -90,7 +90,7 @@ RUN cd plugins \
     && mv discourse-reactions-* discourse-reactions \
     && curl -L https://github.com/foodcoopsat/discourse-group-global-notice/archive/598c3f22d000d9eb11df073f8e8d749797624653.tar.gz | tar -xz \
     && mv discourse-group-global-notice-* discourse-group-global-notice \
-    && curl -L https://github.com/foodcoopsat/discourse-multi-sso/archive/e0562a042c04455f0f978d984b8c8c2d763e981b.tar.gz | tar -xz \
+    && curl -L https://github.com/foodcoopsat/discourse-multi-sso/archive/e19fc0a860613a10dfc1e080484e3f2e76009da8.tar.gz | tar -xz \
     && mv discourse-multi-sso-* discourse-multi-sso \
     && curl -L https://github.com/foodcoopsat/discourse-virtmail/archive/e29c6e90482ba9913bd3231897acf3cb2bb82d63.tar.gz | tar -xz \
     && mv discourse-virtmail-* discourse-virtmail \
