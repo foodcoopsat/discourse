@@ -1,4 +1,4 @@
-FROM ruby:3.2-bullseye AS base
+FROM ruby:3.2-bookworm AS base
 
 ENV RAILS_ENV=production \
     DISCOURSE_SERVE_STATIC_ASSETS=true \
