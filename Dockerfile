@@ -33,6 +33,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     vim-tiny \
     && rm -rf /var/lib/apt/lists/*
 
+
 # add node and npm to path so the commands are available
 # ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
 # ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
@@ -96,6 +97,21 @@ RUN cd app/assets/javascripts/discourse && chown discourse:discourse -R . && su 
 
 # USER root
 
+FROM base AS imagemagick_builder
+RUN apt update && \
+DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
+    autoconf build-essential \
+    git \
+    cmake \
+    gnupg \
+    libpcre3-dev \
+    libfreetype6-dev \
+    libbrotli-dev
+
+ADD discourse_docker/image/base/install-imagemagick /tmp/install-imagemagick
+RUN /tmp/install-imagemagick
+
+
 FROM base AS builder
 
 RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
@@ -132,6 +148,25 @@ COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/app/as
 COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/plugins ./plugins
 COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/public ./public
 COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/tmp ./tmp
+
+# Copy binary and configuration files for magick
+COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
+COPY --from=imagemagick_builder /usr/local/etc/ImageMagick-7 /usr/local/etc/ImageMagick-7
+COPY --from=imagemagick_builder /usr/local/share/ImageMagick-7 /usr/local/share/ImageMagick-7
+# Create symlinks to imagemagick tools
+RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/compare &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/composite &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/conjure &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/convert &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/display &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/identify &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/import &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/magick-script &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/mogrify &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/montage &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
+  test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 
 # Fix omniauth-discourse compatibility
 RUN sed -i 's/URI.escape/CGI.escape/g' plugins/discourse-multi-sso/gems/*/gems/omniauth-discourse-1.0.0/lib/omniauth/strategies/discourse/sso.rb
