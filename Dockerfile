@@ -91,7 +91,7 @@ RUN cd plugins \
     && curl -L https://github.com/foodcoopsat/discourse-multi-sso/archive/e19fc0a860613a10dfc1e080484e3f2e76009da8.tar.gz | tar -xz \
     && mv discourse-multi-sso-* discourse-multi-sso \
     && curl -L https://github.com/foodcoopsat/discourse-virtmail/archive/e29c6e90482ba9913bd3231897acf3cb2bb82d63.tar.gz | tar -xz \
-    && mv discourse-virtmail-* discourse-virtmail
+    && mv discourse-virtmail-* DiscourseVirtmail
 
 RUN cd app/assets/javascripts/discourse && chown discourse:discourse -R . && su discourse -c 'ember build -prod'
 
