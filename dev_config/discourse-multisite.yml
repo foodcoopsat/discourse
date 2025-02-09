@@ -1,0 +1,11 @@
+allmunde:
+    adapter: postgresql
+    database: discourse_allmunde
+    user: discourse
+    password: iZ2nF2KBjzL3nLLDYkpCGQ
+    host: postgres
+    pool: 3
+    timeout: 5000
+    db_id: 2
+    host_names:
+        - app.local.at
