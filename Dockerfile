@@ -1,4 +1,4 @@
-FROM ruby:3.2-bookworm AS base
+FROM ruby:3.3.6-bookworm AS base
 
 ENV RAILS_ENV=production \
     DISCOURSE_SERVE_STATIC_ASSETS=true \
@@ -54,7 +54,7 @@ RUN addgroup --gid 1000 discourse \
 
 WORKDIR /home/discourse/discourse
 
-ENV DISCOURSE_VERSION 3.2.0.beta3
+ENV DISCOURSE_VERSION 3.3.4
 
 
 RUN git clone --branch v${DISCOURSE_VERSION} --depth 1 https://github.com/discourse/discourse.git . 
@@ -75,30 +75,24 @@ RUN yarn install --frozen-lockfile \
 # RUN bundle exec rake yarn:install
 
 RUN cd plugins \
-    && curl -L https://github.com/discourse/discourse-assign/archive/a5b7911cb98532924ffb0b635a3c43285c7fd131.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-assign/archive/215e1e3ab63dff3f09502630dfc753243e1746ed.tar.gz | tar -xz \
     && mv discourse-assign-* discourse-assign \
-    && curl -L https://github.com/discourse/discourse-calendar/archive/a0af35fca8e38b8f7038204a2f5ac17bf61851b2.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-calendar/archive/6cd250dc1082e59b9d258f8be51927379101c0eb.tar.gz | tar -xz \
     && mv discourse-calendar-* discourse-calendar \
-    && curl -L https://github.com/discourse/discourse-data-explorer/archive/9bd70192b6bf2c66252c711b49dd4a6762110432.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-data-explorer/archive/d4be33dcc442f919ff5f400871b17912fd9d02be.tar.gz | tar -xz \
     && mv discourse-data-explorer-* discourse-data-explorer \
-    && curl -L https://github.com/discourse/discourse-docs/archive/8b02f32ad6baf2add12289365307cbdfef0c54bf.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-docs/archive/90f3f97a137dc027ccd62f10ba6894f9811e0557.tar.gz | tar -xz \
     && mv discourse-docs-* discourse-docs \
-    && curl -L https://github.com/discourse/discourse-graphviz/archive/264ed49013e4be6896526593177743de79e8e4a2.tar.gz | tar -xz \
-    && mv discourse-graphviz-* discourse-graphviz \
-    && curl -L https://github.com/discourse/discourse-reactions/archive/37aa7a9bda3aaf6861524e3e8acdc8124997494e.tar.gz  | tar -xz \
+    && curl -L https://github.com/discourse/discourse-reactions/archive/5a0d08ec069c4f82f0a63de612257196e6c47a0f.tar.gz  | tar -xz \
     && mv discourse-reactions-* discourse-reactions \
     && curl -L https://github.com/foodcoopsat/discourse-group-global-notice/archive/598c3f22d000d9eb11df073f8e8d749797624653.tar.gz | tar -xz \
     && mv discourse-group-global-notice-* discourse-group-global-notice \
     && curl -L https://github.com/foodcoopsat/discourse-multi-sso/archive/e19fc0a860613a10dfc1e080484e3f2e76009da8.tar.gz | tar -xz \
     && mv discourse-multi-sso-* discourse-multi-sso \
     && curl -L https://github.com/foodcoopsat/discourse-virtmail/archive/e29c6e90482ba9913bd3231897acf3cb2bb82d63.tar.gz | tar -xz \
-    && mv discourse-virtmail-* discourse-virtmail \
-    && curl -L https://github.com/discourse/discourse-jitsi/archive/730dec01c66225ec9f4ba2a11242e1922dc8b000.tar.gz | tar -xz \
-    && mv discourse-jitsi-* discourse-jitsi
-    # && curl -L https://github.com/discourse/discourse-prometheus/archive/639b8936ca20758802284a35e2b5e764e0a032f9.tar.gz | tar -xz \
-    # && mv discourse-prometheus-* discourse-prometheus \
+    && mv discourse-virtmail-* discourse-virtmail
 
-RUN cd app/assets/javascripts/discourse && ember build -prod 
+RUN cd app/assets/javascripts/discourse && chown discourse:discourse -R . && su discourse -c 'ember build -prod'
 
 # USER root
 
