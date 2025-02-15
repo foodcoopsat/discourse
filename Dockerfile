@@ -79,6 +79,8 @@ ENV DISCOURSE_CALENDAR_VERSION=48841ca40a20620ad1b3961b68ca49ff33d8816d
 ENV DISCOURSE_DATA_EXPLORER_VERSION=6cd9e22526fa7737e4502db728b47c50be7a2559
 ENV DISCOURSE_DOCS_VERSION=07df3779a5dfe5b555d60edf6477afee484da4ba
 ENV DISCOURSE_REACTIONS_VERSION=4a075efbfbf4f6aa8c2840b4760a26b19cd4f9c0
+ENV DISCOURSE_CHECKLIST_VERSION=6fcf9fed5c3ae3baf9ddd1cca9cef4dc089996c1
+ENV DISCOURSE_SOLVED_VERSION=f7bbffa6173b6e06a232e2eeaaef1e4da2d9cb8c
 ENV DISCOURSE_GROUP_GLOBAL_NOTICE_VERSION=598c3f22d000d9eb11df073f8e8d749797624653
 ENV DISCOURSE_MULTI_SSO_VERSION=e19fc0a860613a10dfc1e080484e3f2e76009da8
 ENV DISCOURSE_VIRTMAIL_VERSION=e29c6e90482ba9913bd3231897acf3cb2bb82d63
@@ -94,6 +96,10 @@ RUN cd plugins \
     && mv discourse-docs-* discourse-docs \
     && curl -L https://github.com/discourse/discourse-reactions/archive/${DISCOURSE_REACTIONS_VERSION}.tar.gz  | tar -xz \
     && mv discourse-reactions-* discourse-reactions \
+    && curl -L https://github.com/discourse/discourse-checklist/archive/${DISCOURSE_CHECKLIST_VERSION}.tar.gz | tar -xz \
+    && mv discourse-checklist-* discourse-checklist \
+    && curl -L https://github.com/discourse/discourse-solved/archive/${DISCOURSE_SOLVED_VERSION}.tar.gz | tar -xz \
+    && mv discourse-solved-* discourse-solved \
     && curl -L https://github.com/foodcoopsat/discourse-group-global-notice/archive/${DISCOURSE_GROUP_GLOBAL_NOTICE_VERSION}.tar.gz | tar -xz \
     && mv discourse-group-global-notice-* discourse-group-global-notice \
     && curl -L https://github.com/foodcoopsat/discourse-multi-sso/archive/${DISCOURSE_MULTI_SSO_VERSION}.tar.gz | tar -xz \
