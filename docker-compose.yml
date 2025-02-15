@@ -45,8 +45,8 @@ services:
             - DISCOURSE_HOSTNAME=forum.test.net
             - DISCOURSE_DB_HOST=postgres
             - DISCOURSE_REDIS_HOST=redis
-            - DISCOURSE_SMTP_ADDRESS=app.local.at
-            - DISCOURSE_SMTP_DOMAIN=app.local.at
+            - DISCOURSE_SMTP_ADDRESS=mailcatcher
+            - DISCOURSE_SMTP_DOMAIN=mailcatcher.local.at
             - DISCOURSE_DB_PASSWORD=iZ2nF2KBjzL3nLLDYkpCGQ
         # sysctls:
         #   - net.ipv6.conf.all.disable_ipv6=1
@@ -90,3 +90,11 @@ services:
             - traefik.http.routers.whoami.rule=Host(`whoami.localhost`)
             - traefik.http.routers.whoami.entrypoints=https
             - traefik.http.routers.whoami.tls=true
+    mailcatcher:
+      image: tophfr/mailcatcher
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.mailcatcher.entrypoints: https
+        traefik.http.routers.mailcatcher.rule: Host(`mailcatcher.local.at`)
+        traefik.http.routers.mailcatcher.tls: "true"
+        traefik.http.services.mailcatcher.loadbalancer.server.port: 80

@@ -38,7 +38,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
 # ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
 # ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
-RUN npm install -g terser uglify-js pnpm patch-package ember-cli express yarn
+RUN npm install -g terser uglify-js pnpm@9 patch-package ember-cli express yarn
 
 
 ENV OXIPNG_VERSION 8.0.0
@@ -55,7 +55,7 @@ RUN addgroup --gid 1000 discourse \
 
 WORKDIR /home/discourse/discourse
 
-ENV DISCOURSE_VERSION 3.3.4
+ENV DISCOURSE_VERSION 3.4.0
 
 
 RUN git clone --branch v${DISCOURSE_VERSION} --depth 1 https://github.com/discourse/discourse.git . 
@@ -71,29 +71,37 @@ RUN bundle config build.nokogiri --use-system-libraries \
 # yarn patch-package doesnt work
 # RUN echo 'patch-package' > app/assets/javascripts/run-patch-package \
     # && yarn install --frozen-lockfile \
-RUN yarn install --frozen-lockfile \
-    && yarn cache clean
+RUN pnpm install --frozen-lockfile
 # RUN bundle exec rake yarn:install
 
+ENV DISCOURSE_ASSIGN_VERSION=afdba465d1950caf30eb87559755033b542daa8d
+ENV DISCOURSE_CALENDAR_VERSION=48841ca40a20620ad1b3961b68ca49ff33d8816d
+ENV DISCOURSE_DATA_EXPLORER_VERSION=6cd9e22526fa7737e4502db728b47c50be7a2559
+ENV DISCOURSE_DOCS_VERSION=07df3779a5dfe5b555d60edf6477afee484da4ba
+ENV DISCOURSE_REACTIONS_VERSION=4a075efbfbf4f6aa8c2840b4760a26b19cd4f9c0
+ENV DISCOURSE_GROUP_GLOBAL_NOTICE_VERSION=598c3f22d000d9eb11df073f8e8d749797624653
+ENV DISCOURSE_MULTI_SSO_VERSION=e19fc0a860613a10dfc1e080484e3f2e76009da8
+ENV DISCOURSE_VIRTMAIL_VERSION=e29c6e90482ba9913bd3231897acf3cb2bb82d63
+
 RUN cd plugins \
-    && curl -L https://github.com/discourse/discourse-assign/archive/215e1e3ab63dff3f09502630dfc753243e1746ed.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-assign/archive/${DISCOURSE_ASSIGN_VERSION}.tar.gz | tar -xz \
     && mv discourse-assign-* discourse-assign \
-    && curl -L https://github.com/discourse/discourse-calendar/archive/6cd250dc1082e59b9d258f8be51927379101c0eb.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-calendar/archive/${DISCOURSE_CALENDAR_VERSION}.tar.gz | tar -xz \
     && mv discourse-calendar-* discourse-calendar \
-    && curl -L https://github.com/discourse/discourse-data-explorer/archive/d4be33dcc442f919ff5f400871b17912fd9d02be.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-data-explorer/archive/${DISCOURSE_DATA_EXPLORER_VERSION}.tar.gz | tar -xz \
     && mv discourse-data-explorer-* discourse-data-explorer \
-    && curl -L https://github.com/discourse/discourse-docs/archive/90f3f97a137dc027ccd62f10ba6894f9811e0557.tar.gz | tar -xz \
+    && curl -L https://github.com/discourse/discourse-docs/archive/${DISCOURSE_DOCS_VERSION}.tar.gz | tar -xz \
     && mv discourse-docs-* discourse-docs \
-    && curl -L https://github.com/discourse/discourse-reactions/archive/5a0d08ec069c4f82f0a63de612257196e6c47a0f.tar.gz  | tar -xz \
+    && curl -L https://github.com/discourse/discourse-reactions/archive/${DISCOURSE_REACTIONS_VERSION}.tar.gz  | tar -xz \
     && mv discourse-reactions-* discourse-reactions \
-    && curl -L https://github.com/foodcoopsat/discourse-group-global-notice/archive/598c3f22d000d9eb11df073f8e8d749797624653.tar.gz | tar -xz \
+    && curl -L https://github.com/foodcoopsat/discourse-group-global-notice/archive/${DISCOURSE_GROUP_GLOBAL_NOTICE_VERSION}.tar.gz | tar -xz \
     && mv discourse-group-global-notice-* discourse-group-global-notice \
-    && curl -L https://github.com/foodcoopsat/discourse-multi-sso/archive/e19fc0a860613a10dfc1e080484e3f2e76009da8.tar.gz | tar -xz \
+    && curl -L https://github.com/foodcoopsat/discourse-multi-sso/archive/${DISCOURSE_MULTI_SSO_VERSION}.tar.gz | tar -xz \
     && mv discourse-multi-sso-* discourse-multi-sso \
-    && curl -L https://github.com/foodcoopsat/discourse-virtmail/archive/e29c6e90482ba9913bd3231897acf3cb2bb82d63.tar.gz | tar -xz \
+    && curl -L https://github.com/foodcoopsat/discourse-virtmail/archive/${DISCOURSE_VIRTMAIL_VERSION}.tar.gz | tar -xz \
     && mv discourse-virtmail-* DiscourseVirtmail
 
-RUN cd app/assets/javascripts/discourse && chown discourse:discourse -R . && su discourse -c 'ember build -prod'
+# RUN cd app/assets/javascripts/discourse && chown discourse:discourse -R . && su discourse -c 'ember build -prod'
 
 # USER root
 
