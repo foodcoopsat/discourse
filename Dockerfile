@@ -33,7 +33,21 @@ RUN --mount=type=cache,target=/var/cache/apt \
     vim-tiny \
     && rm -rf /var/lib/apt/lists/*
 
+FROM base AS imagemagick_builder
+RUN apt update && \
+DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
+    autoconf build-essential \
+    git \
+    cmake \
+    gnupg \
+    libpcre3-dev \
+    libfreetype6-dev \
+    libbrotli-dev
 
+ADD discourse_docker/image/base/install-imagemagick /tmp/install-imagemagick
+RUN /tmp/install-imagemagick
+
+FROM base AS complete
 # add node and npm to path so the commands are available
 # ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
 # ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
@@ -83,7 +97,7 @@ ENV DISCOURSE_CHECKLIST_VERSION=6fcf9fed5c3ae3baf9ddd1cca9cef4dc089996c1
 ENV DISCOURSE_SOLVED_VERSION=f7bbffa6173b6e06a232e2eeaaef1e4da2d9cb8c
 ENV DISCOURSE_GROUP_GLOBAL_NOTICE_VERSION=598c3f22d000d9eb11df073f8e8d749797624653
 ENV DISCOURSE_MULTI_SSO_VERSION=e19fc0a860613a10dfc1e080484e3f2e76009da8
-ENV DISCOURSE_VIRTMAIL_VERSION=bb6ea6dee2db7e5ecdfd7e606398e3e4a2ce37bd
+ENV DISCOURSE_VIRTMAIL_VERSION=7290b57663c73b1b888ddec7e12cd8f121bbc259
 
 RUN cd plugins \
     && curl -L https://github.com/discourse/discourse-assign/archive/${DISCOURSE_ASSIGN_VERSION}.tar.gz | tar -xz \
@@ -107,26 +121,13 @@ RUN cd plugins \
     && curl -L https://github.com/foodcoopsat/discourse-virtmail/archive/${DISCOURSE_VIRTMAIL_VERSION}.tar.gz | tar -xz \
     && mv discourse-virtmail-* discourse-virtmail
 
+# COPY plugins/discourse-virtmail plugins/discourse-virtmail
+
 # RUN cd app/assets/javascripts/discourse && chown discourse:discourse -R . && su discourse -c 'ember build -prod'
 
 # USER root
 
-FROM base AS imagemagick_builder
-RUN apt update && \
-DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
-    autoconf build-essential \
-    git \
-    cmake \
-    gnupg \
-    libpcre3-dev \
-    libfreetype6-dev \
-    libbrotli-dev
-
-ADD discourse_docker/image/base/install-imagemagick /tmp/install-imagemagick
-RUN /tmp/install-imagemagick
-
-
-FROM base AS builder
+FROM complete AS builder
 
 RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
     && curl -fsSL https://packages.redis.io/gpg | apt-key add - \
@@ -151,7 +152,7 @@ RUN /etc/init.d/redis-server start \
     && su discourse -c 'bundle exec rake assets:precompile' \
     && su discourse -c 'bundle exec rake multisite:migrate'
 
-FROM base
+FROM complete
 
 RUN ln -sf /dev/stdout /home/discourse/discourse/log/production.log \
     && ln -sf /dev/stdout /var/log/nginx/access.log  \

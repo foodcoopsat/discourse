@@ -1,4 +1,37 @@
 services:
+    roundcube:
+      image: ghcr.io/foodcoopsat/roundcube
+      environment:
+        ROUNDCUBEMAIL_DB_TYPE: sqlite
+        ROUNDCUBEMAIL_DB_USER: roundcube
+        ROUNDCUBEMAIL_DB_HOST: mariadb
+        ROUNDCUBEMAIL_DB_SQLITE_PATH: /sqlite.db
+        ROUNDCUBEMAIL_DB_NAME: roundcube
+        ROUNDCUBEMAIL_DEFAULT_HOST: ssl://mail.local.at
+        ROUNDCUBEMAIL_DEFAULT_PORT: 993
+        ROUNDCUBEMAIL_SMTP_SERVER: ssl://mail.local.at
+        ROUNDCUBEMAIL_SMTP_PORT: 465
+        ROUNDCUBEMAIL_PLUGINS: archive,markasjunk,managesieve,nonce_login,zipdownload
+      healthcheck:
+        test: curl -f http://localhost/
+        start_interval: 10s
+      labels:
+        traefik.enable: "true"
+        traefik.http.middlewares.mail-admin.redirectregex.regex: ^https?://mail.local.at/admin(.*)
+        traefik.http.middlewares.mail-admin.redirectregex.replacement: https://app.local.at/discourse-virtmail/addresses
+        traefik.http.middlewares.roundcube-oauth.redirectregex.regex: ^https?://mail.local.at/index.php/login/oauth\?(.*)$$
+        traefik.http.middlewares.roundcube-oauth.redirectregex.replacement: https://mail.local.at/?_task=login&_action=oauth&$${1}
+        traefik.http.services.roundcube.loadbalancer.server.port: 80
+        traefik.http.routers.roundcube.entrypoints: https
+        traefik.http.routers.roundcube.middlewares: mail-admin,roundcube-oauth
+        traefik.http.routers.roundcube.rule: Host(`mail.local.at`)
+        traefik.http.routers.roundcube.tls: "true"
+        traefik.http.routers.roundcube.tls.domains[0].main: mail.local.at
+      volumes:
+          - "./dev_config/roundcube.php/:/usr/src/roundcubemail/config/config.inc.php:ro"
+          - "./dev_config/roundcube_secret:/run/secrets/roundcube_db_password"
+          - "./dev_config/roundcube_secret:/run/secrets/roundcube_des_key"
+          - "./dev_config/roundcube_secret:/run/secrets/roundcube_oauth_client_secret"
     mkcert:
       image: vishnunair/docker-mkcert
       environment:
@@ -42,6 +75,7 @@ services:
         build:
             context: .
         environment:
+            - RAILS_ENV=production
             - DISCOURSE_HOSTNAME=forum.test.net
             - DISCOURSE_DB_HOST=postgres
             - DISCOURSE_REDIS_HOST=redis
@@ -55,6 +89,8 @@ services:
             - ./dev_data/discourse_uploads:/home/discourse/discourse/public/uploads
             - ./dev_config/discourse-multisite.yml:/home/discourse/discourse/config/multisite.yml
             - ./dev_config/discourse.d/production.rb:/home/discourse/discourse/config/environments/production.rb
+            - ./dev_config/discourse.d/development.rb:/home/discourse/discourse/config/environments/development.rb
+            - ./plugins/discourse-virtmail:/home/discourse/discourse/plugins/discourse-virtmail/
         depends_on:
             - redis
             - postgres
@@ -68,9 +104,15 @@ services:
             traefik.http.routers.discourse.tls: "true"
             # traefik.http.routers.discourse.tls.certresolver: myresolver
             traefik.http.services.discourse.loadbalancer.server.port: 3000
+            # traefik.http.services.discourse.loadbalancer.server.port: 4200
         command: bundle exec rails server --binding '0.0.0.0'
+        # manually run docker compose exec -it discourse bin/rails server --port 3000
+        # also disable traefik on the nginx service
+        # command: node /usr/bin/pnpm --dir=app/assets/javascripts/discourse ember server --proxy http://localhost:3000 --host 0.0.0.0 --port 4200
         healthcheck:
             test: 'curl -f -H ''Host: forum.test.net'' http://localhost:3000/'
+            start_period: 10s
+            start_interval: 1s
     discourse_nginx:
         <<: *discourse
         command: nginx
