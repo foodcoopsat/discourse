@@ -83,7 +83,7 @@ ENV DISCOURSE_CHECKLIST_VERSION=6fcf9fed5c3ae3baf9ddd1cca9cef4dc089996c1
 ENV DISCOURSE_SOLVED_VERSION=f7bbffa6173b6e06a232e2eeaaef1e4da2d9cb8c
 ENV DISCOURSE_GROUP_GLOBAL_NOTICE_VERSION=598c3f22d000d9eb11df073f8e8d749797624653
 ENV DISCOURSE_MULTI_SSO_VERSION=e19fc0a860613a10dfc1e080484e3f2e76009da8
-ENV DISCOURSE_VIRTMAIL_VERSION=e29c6e90482ba9913bd3231897acf3cb2bb82d63
+ENV DISCOURSE_VIRTMAIL_VERSION=fa3e4e011c6fc655cf34665b3eb6f65c2520a3e0
 
 RUN cd plugins \
     && curl -L https://github.com/discourse/discourse-assign/archive/${DISCOURSE_ASSIGN_VERSION}.tar.gz | tar -xz \
@@ -105,7 +105,7 @@ RUN cd plugins \
     && curl -L https://github.com/foodcoopsat/discourse-multi-sso/archive/${DISCOURSE_MULTI_SSO_VERSION}.tar.gz | tar -xz \
     && mv discourse-multi-sso-* discourse-multi-sso \
     && curl -L https://github.com/foodcoopsat/discourse-virtmail/archive/${DISCOURSE_VIRTMAIL_VERSION}.tar.gz | tar -xz \
-    && mv discourse-virtmail-* DiscourseVirtmail
+    && mv discourse-virtmail-* discourse-virtmail
 
 # RUN cd app/assets/javascripts/discourse && chown discourse:discourse -R . && su discourse -c 'ember build -prod'
 
