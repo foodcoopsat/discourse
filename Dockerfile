@@ -1,4 +1,4 @@
-FROM ruby:3.3.6-bookworm AS base
+FROM ruby:3.4.2-bookworm AS base
 
 ENV RAILS_ENV=production \
     DISCOURSE_SERVE_STATIC_ASSETS=true \
