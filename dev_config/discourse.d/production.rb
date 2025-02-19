@@ -4,20 +4,20 @@ Discourse::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb
 
   # Code is not reloaded between requests
-  config.cache_classes = true
-  config.eager_load = true
+  config.cache_classes = false
+  config.eager_load = false
 
   # Full error reports are disabled and caching is turned on
   config.consider_all_requests_local = true
-  config.action_controller.perform_caching = true
+  config.action_controller.perform_caching = false
 
   # Disable Rails's static asset server (Apache or nginx will already do this)
-  config.public_file_server.enabled = GlobalSetting.serve_static_assets || false
+  config.public_file_server.enabled = true
 
-  config.assets.js_compressor = :uglifier
+  # config.assets.js_compressor = :uglifier
 
   # stuff should be pre-compiled
-  config.assets.compile = false
+  config.assets.compile = true
 
   # Generate digests for assets URLs
   config.assets.digest = true
@@ -33,6 +33,9 @@ Discourse::Application.configure do
 
   # Send deprecation notices to registered listeners
   config.active_support.deprecation = :notify
+
+  require "middleware/turbo_dev"
+  config.middleware.insert 0, Middleware::TurboDev
 
   # allows developers to use mini profiler
   config.load_mini_profiler = GlobalSetting.load_mini_profiler

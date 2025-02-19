@@ -52,6 +52,11 @@ FROM base AS complete
 # ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
 # ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
+# Copy binary and configuration files for magick
+COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
+COPY --from=imagemagick_builder /usr/local/etc/ImageMagick-7 /usr/local/etc/ImageMagick-7
+COPY --from=imagemagick_builder /usr/local/share/ImageMagick-7 /usr/local/share/ImageMagick-7
+
 RUN npm install -g terser uglify-js pnpm@9 patch-package ember-cli express yarn
 
 
@@ -164,10 +169,6 @@ COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/plugin
 COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/public ./public
 COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/tmp ./tmp
 
-# Copy binary and configuration files for magick
-COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
-COPY --from=imagemagick_builder /usr/local/etc/ImageMagick-7 /usr/local/etc/ImageMagick-7
-COPY --from=imagemagick_builder /usr/local/share/ImageMagick-7 /usr/local/share/ImageMagick-7
 # Create symlinks to imagemagick tools
 RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
   ln -s /usr/local/bin/magick /usr/local/bin/compare &&\

@@ -1,5 +1,16 @@
 # Discourse Docker Image for foodcoops.at
 
+## Run production
+```
+docker-compose up -d --remove-orphans
+```
+
+## Run in dev mode
+```
+docker-compose -f docker-compose-dev.yml  up -d --remove-orphans
+```
+
+
 ## Test
 
 * import db dump of real data:

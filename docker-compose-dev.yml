@@ -1,0 +1,58 @@
+services:
+  roundcube:
+     extends:
+      file: docker-compose.yml
+      service: roundcube
+  mkcert:
+     extends:
+      file: docker-compose.yml
+      service: mkcert
+  traefik:
+     extends:
+      file: docker-compose.yml
+      service: traefik
+  redis:
+     extends:
+      file: docker-compose.yml
+      service: redis
+  postgres:
+     extends:
+      file: docker-compose.yml
+      service: postgres
+  whoami:
+     extends:
+      file: docker-compose.yml
+      service: whoami
+  mailcatcher:
+     extends:
+      file: docker-compose.yml
+      service: mailcatcher
+  discourse:
+     extends:
+      file: docker-compose.yml
+      service: discourse_sidekiq
+     build:
+       context: .
+       target: complete
+     environment:
+       - RAILS_ENV=production
+       - DISCOURSE_HOSTNAME=discourse
+       - DISCOURSE_DB_HOST=postgres
+       - DISCOURSE_REDIS_HOST=redis
+       - DISCOURSE_SMTP_ADDRESS=mailcatcher
+       - DISCOURSE_SMTP_DOMAIN=mailcatcher.local.at
+       - DISCOURSE_DB_PASSWORD=iZ2nF2KBjzL3nLLDYkpCGQ
+     command: bin/rails server --port 4000
+  discourse_frontend:
+     extends:
+      file: docker-compose.yml
+      service: discourse
+     build:
+       context: .
+       target: complete
+     command: node /usr/bin/pnpm --dir=app/assets/javascripts/discourse ember server --proxy http://discourse:4000 --host 0.0.0.0 --port 3000
+     healthcheck:
+        test: 'curl -f -H ''Host: forum.test.net'' http://localhost:3000/'
+        start_period: 100s
+        start_interval: 1s
+        interval: 10s
