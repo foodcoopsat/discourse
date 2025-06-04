@@ -74,7 +74,7 @@ RUN addgroup --gid 1000 discourse \
 
 WORKDIR /home/discourse/discourse
 
-ENV DISCOURSE_VERSION 3.4.2
+ENV DISCOURSE_VERSION 3.4.4
 
 
 RUN git clone --branch v${DISCOURSE_VERSION} --depth 1 https://github.com/discourse/discourse.git . 
@@ -93,13 +93,13 @@ RUN bundle config build.nokogiri --use-system-libraries \
 RUN pnpm install --frozen-lockfile
 # RUN bundle exec rake yarn:install
 
-ENV DISCOURSE_ASSIGN_VERSION=d8888c45899d607516c2bb4b7a3c116f8f6470f0
-ENV DISCOURSE_CALENDAR_VERSION=90313ae82a6640c2c20a9264c04ae1a35fa5f7a9
-ENV DISCOURSE_DATA_EXPLORER_VERSION=7922daf500c8a976a8fc046aac61133f9c327745
-ENV DISCOURSE_DOCS_VERSION=2bd528a23d1c4b0eb09025e8b30d7c37f14dc371
-ENV DISCOURSE_REACTIONS_VERSION=f87583d9054421869ba0de16c24ad15e32bbebe7
+ENV DISCOURSE_ASSIGN_VERSION=bbb514706213e686693898f0d29fd2016f3addae
+ENV DISCOURSE_CALENDAR_VERSION=bd6e30721474e16d09d1a55adb11cfaf70947837
+ENV DISCOURSE_DATA_EXPLORER_VERSION=5a2bfcebff5356924dfb594bccc3439e0a5e9fec
+ENV DISCOURSE_DOCS_VERSION=1e8f704db2575a5741e357402262fd4e92d106f5
+ENV DISCOURSE_REACTIONS_VERSION=7d7239167f6e37d3758382bfd16940c731d39738
 ENV DISCOURSE_CHECKLIST_VERSION=6fcf9fed5c3ae3baf9ddd1cca9cef4dc089996c1
-ENV DISCOURSE_SOLVED_VERSION=f7bbffa6173b6e06a232e2eeaaef1e4da2d9cb8c
+ENV DISCOURSE_SOLVED_VERSION=a7bc394bdc26c94ba842d1b63fad950d17fdbcae
 ENV DISCOURSE_GROUP_GLOBAL_NOTICE_VERSION=598c3f22d000d9eb11df073f8e8d749797624653
 ENV DISCOURSE_MULTI_SSO_VERSION=e19fc0a860613a10dfc1e080484e3f2e76009da8
 ENV DISCOURSE_VIRTMAIL_VERSION=7290b57663c73b1b888ddec7e12cd8f121bbc259
@@ -117,8 +117,8 @@ RUN cd plugins \
     && mv discourse-reactions-* discourse-reactions \
     && curl -L https://github.com/discourse/discourse-checklist/archive/${DISCOURSE_CHECKLIST_VERSION}.tar.gz | tar -xz \
     && mv discourse-checklist-* discourse-checklist \
-    && curl -L https://github.com/discourse/discourse-solved/archive/${DISCOURSE_SOLVED_VERSION}.tar.gz | tar -xz \
-    && mv discourse-solved-* discourse-solved \
+    # && curl -L https://github.com/discourse/discourse-solved/archive/${DISCOURSE_SOLVED_VERSION}.tar.gz | tar -xz \
+    # && mv discourse-solved-* discourse-solved \
     && curl -L https://github.com/foodcoopsat/discourse-group-global-notice/archive/${DISCOURSE_GROUP_GLOBAL_NOTICE_VERSION}.tar.gz | tar -xz \
     && mv discourse-group-global-notice-* discourse-group-global-notice \
     && curl -L https://github.com/foodcoopsat/discourse-multi-sso/archive/${DISCOURSE_MULTI_SSO_VERSION}.tar.gz | tar -xz \
@@ -135,13 +135,12 @@ RUN cd plugins \
 FROM complete AS builder
 
 RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-    && curl -fsSL https://packages.redis.io/gpg | apt-key add - \
     && echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
-    && echo "deb https://packages.redis.io/deb $(lsb_release -cs) main" > /etc/apt/sources.list.d/redis.list \
+    && sed -i 's/Suites: bookworm bookworm-updates/Suites: bookworm bookworm-updates bookworm-backports/g' /etc/apt/sources.list.d/debian.sources \
     && apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-15 redis
+    && apt-get install -y --no-install-recommends postgresql-15 valkey-server
 
-RUN /etc/init.d/redis-server start \
+RUN /etc/init.d/valkey-server start \
     && /etc/init.d/postgresql start \
     && echo " \
     CREATE USER discourse PASSWORD 'discourse';  \n\

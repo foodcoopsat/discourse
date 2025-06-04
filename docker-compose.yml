@@ -14,7 +14,8 @@ services:
         ROUNDCUBEMAIL_PLUGINS: archive,markasjunk,managesieve,nonce_login,zipdownload
       healthcheck:
         test: curl -f http://localhost/
-        start_interval: 10s
+        start_interval: 1s
+        start_period: 10s
       labels:
         traefik.enable: "true"
         traefik.http.middlewares.mail-admin.redirectregex.regex: ^https?://mail.local.at/admin(.*)
