@@ -91,7 +91,7 @@ services:
             - ./dev_config/discourse-multisite.yml:/home/discourse/discourse/config/multisite.yml
             - ./dev_config/discourse.d/production.rb:/home/discourse/discourse/config/environments/production.rb
             - ./dev_config/discourse.d/development.rb:/home/discourse/discourse/config/environments/development.rb
-            - ./plugins/discourse-virtmail:/home/discourse/discourse/plugins/discourse-virtmail/
+            # - ./plugins/discourse-virtmail:/home/discourse/discourse/plugins/discourse-virtmail/
         depends_on:
             - redis
             - postgres
@@ -115,17 +115,17 @@ services:
             start_period: 10s
             start_interval: 1s
             interval: 10s
-    discourse_nginx:
-        <<: *discourse
-        command: nginx
-        labels:
-            traefik.enable: "true"
-            traefik.http.routers.discourse_nginx.entrypoints: https
-            traefik.http.routers.discourse_nginx.rule: HostRegexp(`app.local.at`) && (PathPrefix(`/assets/`, `/images/`, `/plugins/`, `/javascripts/`, `/uploads/{slug:\w+}/optimized/`))
-            traefik.http.routers.discourse_nginx.tls: "true"
-            traefik.http.services.discourse_nginx.loadbalancer.server.port: 8000
-        healthcheck:
-            test: 'curl -f -H ''Host: app.local.at'' http://localhost:8000/'
+    # discourse_nginx:
+    #     <<: *discourse
+    #     command: nginx
+    #     labels:
+    #         traefik.enable: "true"
+    #         traefik.http.routers.discourse_nginx.entrypoints: https
+    #         traefik.http.routers.discourse_nginx.rule: HostRegexp(`app.local.at`) && (PathPrefix(`/assets/`, `/images/`, `/plugins/`, `/javascripts/`, `/uploads/{slug:\w+}/optimized/`))
+    #         traefik.http.routers.discourse_nginx.tls: "true"
+    #         traefik.http.services.discourse_nginx.loadbalancer.server.port: 8000
+    #     healthcheck:
+    #         test: 'curl -f -H ''Host: app.local.at'' http://localhost:8000/'
     whoami:
         image: traefik/whoami
         container_name: simple-service

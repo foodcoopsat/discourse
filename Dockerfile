@@ -105,26 +105,23 @@ ENV DISCOURSE_MULTI_SSO_VERSION=e19fc0a860613a10dfc1e080484e3f2e76009da8
 ENV DISCOURSE_VIRTMAIL_VERSION=7290b57663c73b1b888ddec7e12cd8f121bbc259
 
 RUN cd plugins \
-    && curl -L https://github.com/discourse/discourse-assign/archive/${DISCOURSE_ASSIGN_VERSION}.tar.gz | tar -xz \
-    && mv discourse-assign-* discourse-assign \
-    && curl -L https://github.com/discourse/discourse-calendar/archive/${DISCOURSE_CALENDAR_VERSION}.tar.gz | tar -xz \
-    && mv discourse-calendar-* discourse-calendar \
-    && curl -L https://github.com/discourse/discourse-data-explorer/archive/${DISCOURSE_DATA_EXPLORER_VERSION}.tar.gz | tar -xz \
-    && mv discourse-data-explorer-* discourse-data-explorer \
-    && curl -L https://github.com/discourse/discourse-docs/archive/${DISCOURSE_DOCS_VERSION}.tar.gz | tar -xz \
-    && mv discourse-docs-* discourse-docs \
-    && curl -L https://github.com/discourse/discourse-reactions/archive/${DISCOURSE_REACTIONS_VERSION}.tar.gz  | tar -xz \
-    && mv discourse-reactions-* discourse-reactions \
-    && curl -L https://github.com/discourse/discourse-checklist/archive/${DISCOURSE_CHECKLIST_VERSION}.tar.gz | tar -xz \
-    && mv discourse-checklist-* discourse-checklist \
-    # && curl -L https://github.com/discourse/discourse-solved/archive/${DISCOURSE_SOLVED_VERSION}.tar.gz | tar -xz \
-    # && mv discourse-solved-* discourse-solved \
+    && git clone https://github.com/discourse/discourse-assign.git \
+    && git clone https://github.com/discourse/discourse-calendar.git \
+    && git clone https://github.com/discourse/discourse-reactions.git \
+    && git clone https://github.com/discourse/discourse-solved.git \
+    && git clone https://github.com/discourse/discourse-data-explorer.git \
+    && git clone https://github.com/discourse/discourse-docs.git \
+    && git clone https://github.com/discourse/discourse-checklist.git \
     && curl -L https://github.com/foodcoopsat/discourse-group-global-notice/archive/${DISCOURSE_GROUP_GLOBAL_NOTICE_VERSION}.tar.gz | tar -xz \
     && mv discourse-group-global-notice-* discourse-group-global-notice \
     && curl -L https://github.com/foodcoopsat/discourse-multi-sso/archive/${DISCOURSE_MULTI_SSO_VERSION}.tar.gz | tar -xz \
     && mv discourse-multi-sso-* discourse-multi-sso \
     && curl -L https://github.com/foodcoopsat/discourse-virtmail/archive/${DISCOURSE_VIRTMAIL_VERSION}.tar.gz | tar -xz \
     && mv discourse-virtmail-* discourse-virtmail
+
+RUN ls -lh ./plugins
+
+RUN LOAD_PLUGINS=0 bundle exec rake plugin:pull_compatible_all
 
 # COPY plugins/discourse-virtmail plugins/discourse-virtmail
 
@@ -153,6 +150,7 @@ RUN /etc/init.d/valkey-server start \
     && chown -R discourse /nonexistent/.config/configstore \
     && mkdir /nonexistent/.cache/yarn -p \
     && chown -R discourse /nonexistent/.cache/yarn \
+    && echo hello \
     && su discourse -c 'bundle exec rake assets:precompile' \
     && su discourse -c 'bundle exec rake multisite:migrate'
 
@@ -167,6 +165,7 @@ COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/app/as
 COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/plugins ./plugins
 COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/public ./public
 COPY --from=builder --chown=discourse:discourse /home/discourse/discourse/tmp ./tmp
+
 
 # Create symlinks to imagemagick tools
 RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
