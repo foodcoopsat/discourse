@@ -4,8 +4,7 @@ ENV RAILS_ENV=production \
     DISCOURSE_SERVE_STATIC_ASSETS=true \
     RUBY_GLOBAL_METHOD_CACHE_SIZE=131072
 
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update \
+RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     brotli \
     ghostscript \
