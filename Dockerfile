@@ -1,14 +1,8 @@
-FROM ruby:3.3.6-bookworm AS base
+FROM ruby:3.3.10-trixie AS base
 
 ENV RAILS_ENV=production \
     DISCOURSE_SERVE_STATIC_ASSETS=true \
-    RUBY_ALLOCATOR=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2 \
-    RUBY_GLOBAL_METHOD_CACHE_SIZE=131072 \
-    NODE_MAJOR=18
-
-RUN mkdir -p /etc/apt/keyrings \
-    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
-    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" > /etc/apt/sources.list.d/nodesource.list
+    RUBY_GLOBAL_METHOD_CACHE_SIZE=131072
 
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update \
@@ -24,6 +18,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     libxml2 \
     nginx \
     nodejs \
+    npm \
     optipng \
     pngcrush \
     pngquant \
@@ -33,14 +28,15 @@ RUN --mount=type=cache,target=/var/cache/apt \
     vim-tiny \
     && rm -rf /var/lib/apt/lists/*
 
+ENV LD_PRELOAD=libjemalloc.so.2
+
 FROM base AS imagemagick_builder
-RUN apt update && \
+RUN apt-get update && \
 DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
     autoconf build-essential \
     git \
     cmake \
     gnupg \
-    libpcre3-dev \
     libfreetype6-dev \
     libbrotli-dev
 
@@ -52,10 +48,10 @@ FROM base AS complete
 # ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
 # ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
-# Copy binary and configuration files for magick
-COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
-COPY --from=imagemagick_builder /usr/local/etc/ImageMagick-7 /usr/local/etc/ImageMagick-7
-COPY --from=imagemagick_builder /usr/local/share/ImageMagick-7 /usr/local/share/ImageMagick-7
+# # Copy binary and configuration files for magick
+# COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
+# COPY --from=imagemagick_builder /usr/local/etc/ImageMagick-7 /usr/local/etc/ImageMagick-7
+# COPY --from=imagemagick_builder /usr/local/share/ImageMagick-7 /usr/local/share/ImageMagick-7
 
 RUN npm install -g terser uglify-js pnpm@9 patch-package ember-cli express yarn
 
@@ -70,12 +66,15 @@ RUN curl -o oxipng.tar.gz -fSL "https://github.com/shssoichiro/oxipng/releases/d
     && rm -r oxipng*
 
 RUN addgroup --gid 1000 discourse \
-    && adduser --system --uid 1000 --ingroup discourse --shell /bin/bash discourse
+    && adduser --system --uid 1000 --ingroup discourse --shell /bin/bash discourse \
+    && mkdir -p /home/discourse/discourse \
+    && chown -R discourse /home/discourse
 
 WORKDIR /home/discourse/discourse
 
 ENV DISCOURSE_VERSION 3.4.4
 
+USER discourse
 
 RUN git clone --branch v${DISCOURSE_VERSION} --depth 1 https://github.com/discourse/discourse.git . 
 
@@ -119,8 +118,6 @@ RUN cd plugins \
     && curl -L https://github.com/foodcoopsat/discourse-virtmail/archive/${DISCOURSE_VIRTMAIL_VERSION}.tar.gz | tar -xz \
     && mv discourse-virtmail-* discourse-virtmail
 
-RUN ls -lh ./plugins
-
 RUN LOAD_PLUGINS=0 bundle exec rake plugin:pull_compatible_all
 
 # COPY plugins/discourse-virtmail plugins/discourse-virtmail
@@ -131,13 +128,16 @@ RUN LOAD_PLUGINS=0 bundle exec rake plugin:pull_compatible_all
 
 FROM complete AS builder
 
-RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-    && echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+USER root
+
+RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/postgresql-keyring.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && sed -i 's/Suites: bookworm bookworm-updates/Suites: bookworm bookworm-updates bookworm-backports/g' /etc/apt/sources.list.d/debian.sources \
     && apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-15 valkey-server
+    && apt-get install -y --no-install-recommends postgresql-18 valkey-server
 
-RUN /etc/init.d/valkey-server start \
+RUN sed -i 's/^# *ignore-warnings ARM64-COW-BUG/ignore-warnings ARM64-COW-BUG/g' /etc/valkey/valkey.conf \
+    && valkey-server /etc/valkey/valkey.conf \
     && /etc/init.d/postgresql start \
     && echo " \
     CREATE USER discourse PASSWORD 'discourse';  \n\
@@ -145,17 +145,15 @@ RUN /etc/init.d/valkey-server start \
     \\\\c discourse  \n\
     CREATE EXTENSION hstore;  \n\
     CREATE EXTENSION pg_trgm;" | su postgres -c psql \
-    && chown -R discourse /home/discourse/discourse \
     && mkdir /nonexistent/.config/configstore -p \
-    && chown -R discourse /nonexistent/.config/configstore \
     && mkdir /nonexistent/.cache/yarn -p \
-    && chown -R discourse /nonexistent/.cache/yarn \
-    && echo hello \
+    && ls /home \
     && su discourse -c 'bundle exec rake assets:precompile' \
     && su discourse -c 'bundle exec rake multisite:migrate'
 
 FROM complete
 
+USER root
 RUN ln -sf /dev/stdout /home/discourse/discourse/log/production.log \
     && ln -sf /dev/stdout /var/log/nginx/access.log  \
     && ln -sf /dev/stderr /var/log/nginx/error.log \
@@ -187,9 +185,10 @@ RUN sed -i 's/URI.escape/CGI.escape/g' plugins/discourse-multi-sso/gems/*/gems/o
 
 COPY nginx.conf /etc/nginx/
 RUN rm /home/discourse/discourse/config/initializers/100-verify_config.rb
-RUN chown -R discourse /home/discourse/discourse
 
 USER discourse
 
+COPY entrypoint.sh /docker-entrypoint.sh
+ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 3000
 CMD ["bundle", "exec", "rails", "server", "--binding", "0.0.0.0"]
